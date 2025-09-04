@@ -36,26 +36,26 @@ func (c *Client) CurrentPerformanceData() (*CurrentPerformanceData, error) {
 
 type HistoricalPerformanceData struct {
 	CPUChartDatapoints []struct {
-		HistID    int `json:"histId"`
-		Timestamp int `json:"timestamp"`
-		Value     int `json:"value"`
+		HistID    int     `json:"histId"`
+		Timestamp int     `json:"timestamp"`
+		Value     float32 `json:"value"`
 	} `json:"cpuChartDatapoints"`
 	MemoryChartDatapoints struct {
 		HeapMemoryDatapoints []struct {
-			HistID    int `json:"histId"`
-			Timestamp int `json:"timestamp"`
-			Value     int `json:"value"`
+			HistID    int     `json:"histId"`
+			Timestamp int     `json:"timestamp"`
+			Value     float32 `json:"value"`
 		} `json:"heapMemoryDatapoints"`
 		NonHeapMemoryDatapoints []struct {
-			HistID    int `json:"histId"`
-			Timestamp int `json:"timestamp"`
-			Value     int `json:"value"`
+			HistID    int     `json:"histId"`
+			Timestamp int     `json:"timestamp"`
+			Value     float32 `json:"value"`
 		} `json:"nonHeapMemoryDatapoints"`
 	} `json:"memoryChartDatapoints"`
 }
 
 func (c *Client) HistoricalPerformanceData() (*HistoricalPerformanceData, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/systemPerformance/historicalGauges", c.GetGatewayAddress()), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/systemPerformance/charts", c.GetGatewayAddress()), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +77,11 @@ func (c *Client) HistoricalPerformanceData() (*HistoricalPerformanceData, error)
 }
 
 type ClockDrift struct {
-	ClockDrift int `json:"clockDrift"`
+	ClockDrift float32 `json:"clockDrift"`
 }
 
 func (c *Client) ClockDrift() (*ClockDrift, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/systemPerformance/clockDrift", c.GetGatewayAddress()), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/systemPerformance/driftGauge", c.GetGatewayAddress()), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ type ThreadExecutionData struct {
 }
 
 func (c *Client) ThreadExecutionData() (*ThreadExecutionData, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/systemPerformance/threadExecution", c.GetGatewayAddress()), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/systemPerformance/threads", c.GetGatewayAddress()), nil)
 	if err != nil {
 		return nil, err
 	}
