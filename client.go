@@ -2,6 +2,7 @@ package ignition
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 )
 
@@ -40,4 +41,9 @@ func (c *Client) GetGatewayAddress() string {
 		addr = fmt.Sprintf("http://%s:%d", c.GatewayAddress, c.GatewayPort)
 	}
 	return addr
+}
+
+func setHeaders(req *http.Request, token string) {
+	req.Header.Set(AUTH_HEADER, token)
+	req.Header.Set("Accept", "application/json")
 }

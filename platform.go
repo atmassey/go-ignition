@@ -17,8 +17,7 @@ func (c *Client) CurrentPerformanceData() (*CurrentPerformanceData, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set(AUTH_HEADER, c.Token)
-	req.Header.Set("Accept", "application/json")
+	setHeaders(req, c.Token)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -28,6 +27,103 @@ func (c *Client) CurrentPerformanceData() (*CurrentPerformanceData, error) {
 		return nil, fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
 	}
 	var data CurrentPerformanceData
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+type HistoricalPerformanceData struct {
+	CPUChartDatapoints []struct {
+		HistID    int `json:"histId"`
+		Timestamp int `json:"timestamp"`
+		Value     int `json:"value"`
+	} `json:"cpuChartDatapoints"`
+	MemoryChartDatapoints struct {
+		HeapMemoryDatapoints []struct {
+			HistID    int `json:"histId"`
+			Timestamp int `json:"timestamp"`
+			Value     int `json:"value"`
+		} `json:"heapMemoryDatapoints"`
+		NonHeapMemoryDatapoints []struct {
+			HistID    int `json:"histId"`
+			Timestamp int `json:"timestamp"`
+			Value     int `json:"value"`
+		} `json:"nonHeapMemoryDatapoints"`
+	} `json:"memoryChartDatapoints"`
+}
+
+func (c *Client) HistoricalPerformanceData() (*HistoricalPerformanceData, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/systemPerformance/historicalGauges", c.GetGatewayAddress()), nil)
+	if err != nil {
+		return nil, err
+	}
+	setHeaders(req, c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	var data HistoricalPerformanceData
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+type ClockDrift struct {
+	ClockDrift int `json:"clockDrift"`
+}
+
+func (c *Client) ClockDrift() (*ClockDrift, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/systemPerformance/clockDrift", c.GetGatewayAddress()), nil)
+	if err != nil {
+		return nil, err
+	}
+	setHeaders(req, c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	var data ClockDrift
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+type ThreadExecutionData struct {
+	Running      int `json:"running"`
+	Waiting      int `json:"waiting"`
+	TimedWaiting int `json:"timedWaiting"`
+	Blocked      int `json:"blocked"`
+}
+
+func (c *Client) ThreadExecutionData() (*ThreadExecutionData, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/systemPerformance/threadExecution", c.GetGatewayAddress()), nil)
+	if err != nil {
+		return nil, err
+	}
+	setHeaders(req, c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	var data ThreadExecutionData
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
 		return nil, err
