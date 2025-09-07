@@ -160,3 +160,23 @@ func (c *Client) ClockDriftEvents() (*ClockDriftEvents, error) {
 	}
 	return &data, nil
 }
+
+func (c *Client) RestartGateway() error {
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/data/api/v1/restart-tasks/restart", c.GetGatewayAddress()), nil)
+	if err != nil {
+		return err
+	}
+	setHeaders(req, c.Token)
+	q := req.URL.Query()
+	q.Add("confirm", "true")
+	req.URL.RawQuery = q.Encode()
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	return nil
+}
