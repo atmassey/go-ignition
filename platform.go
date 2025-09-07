@@ -180,3 +180,48 @@ func (c *Client) RestartGateway() error {
 	}
 	return nil
 }
+
+type GatewayInfo struct {
+	Name                 string `json:"name"`
+	RedundancyRole       string `json:"redundancyRole"`
+	Edition              string `json:"edition"`
+	Hostname             string `json:"hostname"`
+	Port                 string `json:"port"`
+	IgnitionVersion      string `json:"ignitionVersion"`
+	DeploymentMode       string `json:"deploymentMode"`
+	TimeZone             string `json:"timeZone"`
+	TimeZoneID           string `json:"timeZoneId"`
+	JvmVersion           string `json:"jvmVersion"`
+	AllowUnsignedModules bool   `json:"allowUnsignedModules"`
+	License              struct {
+		Mode                string `json:"mode"`
+		ValidForVersion     int    `json:"validForVersion"`
+		ExpirationDate      string `json:"expirationDate"`
+		LicenseRestrictions []struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"licenseRestrictions"`
+	} `json:"license"`
+}
+
+func (c *Client) GatewayInfo() (*GatewayInfo, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/gateway-info", c.GetGatewayAddress()), nil)
+	if err != nil {
+		return nil, err
+	}
+	setHeaders(req, c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	var data GatewayInfo
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
