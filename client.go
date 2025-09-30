@@ -47,3 +47,11 @@ func setHeaders(req *http.Request, token string) {
 	req.Header.Set(AUTH_HEADER, token)
 	req.Header.Set("Accept", "application/json")
 }
+
+func addQueryParams(req *http.Request, params *map[string]string) {
+	q := req.URL.Query()
+	for key, value := range *params {
+		q.Add(key, value)
+	}
+	req.URL.RawQuery = q.Encode()
+}

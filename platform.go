@@ -254,3 +254,76 @@ func (c *Client) DownloadSystemLogs() error {
 	}
 	return nil
 }
+
+type AuditLog struct {
+	Items []struct {
+	} `json:"items"`
+	Metadata struct {
+		Total    int `json:"total"`
+		Matching int `json:"matching"`
+		Limit    int `json:"limit"`
+		Offset   int `json:"offset"`
+	} `json:"metadata"`
+}
+
+func (c *Client) GetAuditLog(name string, params *map[string]string) (*AuditLog, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/audit/log/%s", c.GetGatewayAddress(), name), nil)
+	if err != nil {
+		return nil, err
+	}
+	setHeaders(req, c.Token)
+	if params != nil {
+		addQueryParams(req, params)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	var data AuditLog
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+type AuditProfileNames struct {
+	Items []struct {
+		Name string `json:"name"`
+	} `json:"items"`
+	Metadata struct {
+		Total    int `json:"total"`
+		Matching int `json:"matching"`
+		Limit    int `json:"limit"`
+		Offset   int `json:"offset"`
+	} `json:"metadata"`
+}
+
+func (c *Client) GetAuditProfileNames(serverId string, params *map[string]string) (*AuditProfileNames, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/audit/remote-profiles/%s", c.GetGatewayAddress(), serverId), nil)
+	if err != nil {
+		return nil, err
+	}
+	setHeaders(req, c.Token)
+	if params != nil {
+		addQueryParams(req, params)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	var data AuditProfileNames
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
