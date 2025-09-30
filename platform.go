@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 )
 
 type CurrentPerformanceData struct {
@@ -227,7 +228,7 @@ func (c *Client) GatewayInfo() (*GatewayInfo, error) {
 	return &data, nil
 }
 
-func (c *Client) DownloadSystemLogs(path string) error {
+func (c *Client) DownloadSystemLogs() error {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/logs/download", c.GetGatewayAddress()), nil)
 	if err != nil {
 		return err
@@ -241,7 +242,8 @@ func (c *Client) DownloadSystemLogs(path string) error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
 	}
-	outFile, err := os.Create(path)
+	dateStr := time.Now().Format("20060102_150405")
+	outFile, err := os.Create(fmt.Sprintf("syslog_%v.sqlite", dateStr))
 	if err != nil {
 		return err
 	}
