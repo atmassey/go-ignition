@@ -327,3 +327,20 @@ func (c *Client) GetAuditProfileNames(serverId string, params *map[string]string
 	}
 	return &data, nil
 }
+
+func (c *Client) RequestProjectScan() error {
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/data/api/v1/scan/projects", c.GetGatewayAddress()), nil)
+	if err != nil {
+		return err
+	}
+	setHeaders(req, c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	return nil
+}
