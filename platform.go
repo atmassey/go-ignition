@@ -1,9 +1,11 @@
 package ignition
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -328,8 +330,48 @@ func (c *Client) GetAuditProfileNames(serverId string, params *map[string]string
 	return &data, nil
 }
 
+// Acquires a scan lock to prevent changes to the project for a certain time
+func (c *Client) AcquireProjectScanLock(lockDuration time.Duration, acquireDuration time.Duration) error {
+	body := url.Values{}
+	body.Add("holdTimeout", fmt.Sprintf("%d", int(lockDuration.Seconds())))
+	body.Add("acquireTimeout", fmt.Sprintf("%d", int(acquireDuration.Seconds())))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/data/api/v1/scan-lock/projects", c.GetGatewayAddress()), bytes.NewBufferString(body.Encode()))
+	if err != nil {
+		return err
+	}
+	setHeaders(req, c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	return nil
+}
+
+// Request Gateway to perform a project scan
 func (c *Client) RequestProjectScan() error {
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/data/api/v1/scan/projects", c.GetGatewayAddress()), nil)
+	if err != nil {
+		return err
+	}
+	setHeaders(req, c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	return nil
+}
+
+// Request Gateway to perform a Config Scan
+func (c *Client) RequestConfigScan() error {
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/data/api/v1/scan/config", c.GetGatewayAddress()), nil)
 	if err != nil {
 		return err
 	}
