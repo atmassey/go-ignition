@@ -331,24 +331,29 @@ func (c *Client) GetAuditProfileNames(serverId string, params *map[string]string
 }
 
 // Acquires a scan lock to prevent changes to the project for a certain time
-func (c *Client) AcquireProjectScanLock(lockDuration time.Duration, acquireDuration time.Duration) error {
+func (c *Client) AcquireProjectScanLock(lockDuration time.Duration, acquireDuration time.Duration) (*ScanLockStatus, error) {
 	body := url.Values{}
 	body.Add("holdTimeout", fmt.Sprintf("%d", int(lockDuration.Seconds())))
 	body.Add("acquireTimeout", fmt.Sprintf("%d", int(acquireDuration.Seconds())))
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/data/api/v1/scan-lock/projects", c.GetGatewayAddress()), bytes.NewBufferString(body.Encode()))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	setHeaders(req, c.Token)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
 	}
-	return nil
+	var status ScanLockStatus
+	err = json.NewDecoder(resp.Body).Decode(&status)
+	if err != nil {
+		return nil, err
+	}
+	return &status, nil
 }
 
 // Request Gateway to perform a project scan
@@ -385,4 +390,36 @@ func (c *Client) RequestConfigScan() error {
 		return fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
 	}
 	return nil
+}
+
+type ScanLockStatus struct {
+	Timestamp int    `json:"timestamp"`
+	Remaining int    `json:"remaining"`
+	Actor     string `json:"actor"`
+}
+
+// Acquires a scan lock to prevent changes to the config for a certain time
+func (c *Client) AcquireConfigScanLock(lockDuration time.Duration, acquireDuration time.Duration) (*ScanLockStatus, error) {
+	body := url.Values{}
+	body.Add("holdTimeout", fmt.Sprintf("%d", int(lockDuration.Seconds())))
+	body.Add("acquireTimeout", fmt.Sprintf("%d", int(acquireDuration.Seconds())))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/data/api/v1/scan-lock/config", c.GetGatewayAddress()), bytes.NewBufferString(body.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	setHeaders(req, c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	var status ScanLockStatus
+	err = json.NewDecoder(resp.Body).Decode(&status)
+	if err != nil {
+		return nil, err
+	}
+	return &status, nil
 }
