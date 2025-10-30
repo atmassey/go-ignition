@@ -423,3 +423,30 @@ func (c *Client) AcquireConfigScanLock(lockDuration time.Duration, acquireDurati
 	}
 	return &status, nil
 }
+
+type GatewayName struct {
+	GatewayName      string `json:"gatewayName"`
+	CleanGatewayName string `json:"cleanGatewayName"`
+}
+
+func (c *Client) GetGatewayName() (*GatewayName, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/overview/name", c.GetGatewayAddress()), nil)
+	if err != nil {
+		return nil, err
+	}
+	setHeaders(req, c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	var name GatewayName
+	err = json.NewDecoder(resp.Body).Decode(&name)
+	if err != nil {
+		return nil, err
+	}
+	return &name, nil
+}
