@@ -484,3 +484,55 @@ func (c *Client) GetOPCConnectionResources() (*OPCConnectionResource, error) {
 	}
 	return &resources, nil
 }
+
+// GetGatewayBackup downloads the gateway backup file with the given name and saves it to the current working directory.
+func (c *Client) GetGatewayBackup(backupName string) error {
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/data/api/v1/backup", c.GetGatewayAddress()), nil)
+	if err != nil {
+		return err
+	}
+	setHeaders(req, c.Token)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	outFile, err := os.Create(backupName)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+	_, err = outFile.ReadFrom(resp.Body)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RestoreGatewayBackup restores the gateway backup from the given file path.
+func (c *Client) RestoreGatewayBackup(backupFilePath string) error {
+	file, err := os.Open(backupFilePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/data/api/v1/backup", c.GetGatewayAddress()), file)
+	if err != nil {
+		return err
+	}
+	setHeaders(req, c.Token)
+	req.Header.Set("Content-Type", "application/octet-stream")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d, status: %v", resp.StatusCode, resp.Status)
+	}
+	return nil
+}
